@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.2.9
+// @version      1.2.10
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -13,15 +13,6 @@
  * @param {boolean} 是否跳过选修课
  */
 var skipElectives = true; //true: 不计算选修课，false: 计算选修课，默认不计算选修课
-
-/**
- * 总学分
- */
-var totalPoints = [];
-/**
- * 总成绩
- */
-var totalScores = [];
 
 /**
  * 判断是否为 CET 相关的课程
@@ -125,6 +116,13 @@ function calGpa(frame, sPlace) {
         data = calSingleGpa(odd, data, sPlace);
 
         datas.push(data);
+
+        data = {
+            totalPoints: 0,
+            totalScores: 0,
+            totalNotFailedPoints: 0,
+            fails: 0
+        };
     }
 
     return datas;
@@ -205,8 +203,8 @@ function main() {
                         slide[i].innerText += slide[i].getAttribute('is-add')==undefined ? ("\xa0\xa0GPA: " + gpa) : '';
                         slide[i].setAttribute('is-add', 'true');
 
-                        total.points += results[i].totalScores;
-                        total.scores += results[i].totalPoints;
+                        total.points += results[i].totalPoints;
+                        total.scores += results[i].totalScores;
                     }
 
                     let s = "\xa0\xa0GPA: " + (total.scores / total.points).toFixed(2);
@@ -254,9 +252,10 @@ function main() {
 
                     let p = document.createElement('p');
                     p.innerText = '总修读学分:\xa0' + results[0].totalPoints
-                                    + '\xa0\xa0已通过学分:\xa0' + results[0].totalNotFailedPoint
+                                    + '\xa0\xa0已通过学分:\xa0' + results[0].totalNotFailedPoints
                                     + '\xa0\xa0挂科数:\xa0' + results[0].fails
                                     + '\xa0\xa0平均学分绩点: \xa0' + gpa;
+                    mainF.document.querySelectorAll('td')[8].appendChild(p);
                 }, 1500);
             }
         }
