@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.2.8
+// @version      1.2.9
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -65,11 +65,11 @@ function isNotCount(name, course, score) {
 /**
  * 计算单个学期的平均学分绩点
  * @param {HTMLAllCollection} obj 该学期的 HTML 集合
- * @param {object} ps 存有总学分和总成绩的对象
+ * @param {object} d 存有总学分、总成绩、已通过学分、挂科数的对象
  * @param {number} sPlace 成绩所在的位置
- * @returns {object} 存有总学分和总成绩的对象
+ * @returns {object} 存有总学分、总成绩、已通过学分、挂科数的对象
  */
-function calSingleGpa(obj, ps, sPlace) {
+function calSingleGpa(obj, d, sPlace) {
     for (let o of obj) {
         let datas = o.querySelectorAll('td');
         if (isNotCount(datas[2].innerText, datas[0].innerText, datas[sPlace].innerText)) {
@@ -80,50 +80,54 @@ function calSingleGpa(obj, ps, sPlace) {
         // console.log(datas[2].innerText + ' - 学分：' + datas[4].innerText + ' - 成绩：' + datas[sPlace].children[0].innerText);
 
         let p = Number(datas[4].innerText);
-        ps.tp += p
+        d.totalPoints += p
 
         let score = Number(datas[sPlace].innerText);
         let gradePoint = 0;
         if (score >= 60) {
             gradePoint = (score - 60) / 10 + 1;
+            d.totalNotFailedPoints += p
+        } else {
+            d.fails++;
         }
-        ps.ts += gradePoint * p;
+        d.totalScores += gradePoint * p;
 
         datas[2].innerText += ' ※';
         datas[2].style = "font-weight:bolder";
     }
-    return ps;
+    return d;
 }
 
 /**
  * 计算平均学分绩点
  * @param {HTMLIFrameElement} frame 记录了课程信息的网页框架
  * @param {number} sPlace 成绩所在的位置
+ * @returns {object[]} 返回包含总学分、总成绩、已通过学分、挂科数的对象的数组
  */
 function calGpa(frame, sPlace) {
-    let ps = {
-        tp: 0,
-        ts: 0
+    let data = {
+        totalPoints: 0,
+        totalScores: 0,
+        totalNotFailedPoints: 0,
+        fails: 0
     };
+    let datas = [];
     let scores = frame.document.querySelectorAll('.titleTop2');
 
     for (let s of scores) {
         let even = s.querySelectorAll('.even');
-        ps = calSingleGpa(even, ps, sPlace);
+        data = calSingleGpa(even, data, sPlace);
 
         let ef = s.querySelectorAll('.evenfocus');
-        ps = calSingleGpa(ef, ps, sPlace);
+        data = calSingleGpa(ef, data, sPlace);
 
         let odd = s.querySelectorAll('.odd');
-        ps = calSingleGpa(odd, ps, sPlace);
+        data = calSingleGpa(odd, data, sPlace);
 
-        totalPoints.push(ps.tp);
-        totalScores.push(ps.ts);
-
-        ps.tp = 0;
-        ps.ts = 0;
+        datas.push(data);
     }
 
+    return datas;
     // console.log('totalPoints:' + totalPoints);
     // console.log('totalScores:' + totalScores);
 }
@@ -153,7 +157,7 @@ function main() {
 
                 // 延时等待框架加载完成
                 setTimeout(function() {
-                    calGpa(scoreF, 6);
+                    let results = calGpa(scoreF, 6);
 
                     /**
                      * 每学期的标题位置
@@ -190,7 +194,7 @@ function main() {
                     for (let i = 0; i < titles.length; i++) {
                         // console.log(titles[i]);
                         let b = document.createElement('b');
-                        let gpa = (totalScores[i] / totalPoints[i]).toFixed(2);
+                        let gpa = (results[i].totalScores / results[i].totalPoints).toFixed(2);
 
                         b.innerText = '\xa0本学期平均学分绩点: ' + gpa;
                         titles[i].getElementsByTagName('td')[2].appendChild(b);
@@ -201,17 +205,14 @@ function main() {
                         slide[i].innerText += slide[i].getAttribute('is-add')==undefined ? ("\xa0\xa0GPA: " + gpa) : '';
                         slide[i].setAttribute('is-add', 'true');
 
-                        total.points += totalPoints[i];
-                        total.scores += totalScores[i];
+                        total.points += results[i].totalScores;
+                        total.scores += results[i].totalPoints;
                     }
 
                     let s = "\xa0\xa0GPA: " + (total.scores / total.points).toFixed(2);
                     headTitle.querySelectorAll('td')[2]
                                 .querySelector('b').innerText += headTitle.getAttribute('is-add')==undefined ? s : '';
                     headTitle.setAttribute('is-add', 'true');
-
-                    totalPoints = [];
-                    totalScores = [];
                 }, 1500);
             }
         }
@@ -238,20 +239,24 @@ function main() {
                 mainF.document.body.setAttribute("is-calculated", "true"); // 设置属性避免延时时持续对框架内容进行操作
 
                 setTimeout(function() {
-                    calGpa(mainF, 9);
+                    let results = calGpa(mainF, 9);
 
                     /**
                      * “本学期成绩”标题位置
                      */
                     let title = mainF.document.querySelector('.title');
+                    let gpa = (results[0].totalScores / results[0].totalPoints).toFixed(2);
 
                     // console.log(titles[i]);
                     let b = document.createElement('b');
-                    b.innerText = '\xa0平均学分绩点: ' + (totalScores[0] / totalPoints[0]).toFixed(2);
+                    b.innerText = '\xa0平均学分绩点: ' + gpa;
                     title.getElementsByTagName('td')[2].appendChild(b);
 
-                    totalPoints = [];
-                    totalScores = [];
+                    let p = document.createElement('p');
+                    p.innerText = '总修读学分:\xa0' + results[0].totalPoints
+                                    + '\xa0\xa0已通过学分:\xa0' + results[0].totalNotFailedPoint
+                                    + '\xa0\xa0挂科数:\xa0' + results[0].fails
+                                    + '\xa0\xa0平均学分绩点: \xa0' + gpa;
                 }, 1500);
             }
         }
