@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.2.13
+// @version      1.2.14
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -18,8 +18,7 @@ var skipElectives = true; //true: 不计算选修课，false: 计算选修课，
  * @returns {boolean} true: 是 CET 相关课程; false: 不是
  */
 function isEnglishTest(name) {
-    return new RegExp("英语实践+").test(name)
-            || new RegExp("全国英语+").test(name);
+    return new RegExp("英语实践+").test(name) || new RegExp("全国英语+").test(name);
 }
 
 /**
@@ -41,19 +40,28 @@ function isEffectiveScore(score) {
 }
 
 /**
+ * 判断课程是否缓考
+ * @param {HTMLCollection} datas 课程各项数据组成的数组
+ * @returns {boolean} true: 该课程缓考; false: 正常状态未缓考
+ */
+function isDeferrd(datas) {
+    return datas.length === 13 && datas[11].innerText.trim() == '缓考'
+}
+
+/**
  * 判断该课程是否计入绩点
- * @param {string} name 课程名称
- * @param {string} course 课程号
- * @param {string} score 课程成绩
+ * @param {HTMLCollection} datas 课程各项数据组成的数组
+ * @param {number} p 成绩所在位置
  * @returns {boolean} true: 不计入该课程成绩; false: 计入
  */
-function isNotCount(name, course, score) {
-    return isEnglishTest(name) || isElectives(course) || isEffectiveScore(score);
+function isNotCount(datas, p) {
+    return isEnglishTest(datas[2].innerText) || isElectives(datas[0].innerText) ||
+        isEffectiveScore(datas[p].innerText) || isDeferrd(datas);
 }
 
 /**
  * 计算单个学期的平均学分绩点
- * @param {HTMLAllCollection} obj 该学期的 HTML 集合
+ * @param {HTMLCollection} obj 该学期的 HTML 集合
  * @param {object} d 存有总学分、总成绩、已通过学分、挂科数的对象
  * @param {number} sPlace 成绩所在的位置
  * @returns {object} 存有总学分、总成绩、已通过学分、挂科数的对象
@@ -61,7 +69,7 @@ function isNotCount(name, course, score) {
 function calSingleGpa(obj, d, sPlace) {
     for (let o of obj) {
         let datas = o.querySelectorAll('td');
-        if (isNotCount(datas[2].innerText, datas[0].innerText, datas[sPlace].innerText)) {
+        if (isNotCount(datas, sPlace)) {
             datas[2].innerText += ' (跳过)';
             continue;
         }
