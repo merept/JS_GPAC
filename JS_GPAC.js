@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.2.12
+// @version      1.2.13
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -10,14 +10,11 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-/**
- * @param {boolean} 是否跳过选修课
- */
 var skipElectives = true; //true: 不计算选修课，false: 计算选修课，默认不计算选修课
 
 /**
  * 判断是否为 CET 相关的课程
- * @param {String} name 课程名称
+ * @param {string} name 课程名称
  * @returns {boolean} true: 是 CET 相关课程; false: 不是
  */
 function isEnglishTest(name) {
@@ -27,7 +24,7 @@ function isEnglishTest(name) {
 
 /**
  * 判断是否为选修课, 若用户设置变量 {skipElectives} 为 false 则直接返回 false
- * @param {String} course 课程号
+ * @param {string} course 课程号
  * @returns {boolean} true: 是选修课; false: 不是或者用户设置不跳过选修课
  */
 function isElectives(course) {
@@ -36,7 +33,7 @@ function isElectives(course) {
 
 /**
  * 判断成绩是否为空
- * @param {String} score 课程成绩
+ * @param {string} score 课程成绩
  * @returns {boolean} true: 课程成绩为空; false: 不为空
  */
 function isEffectiveScore(score) {
@@ -45,9 +42,9 @@ function isEffectiveScore(score) {
 
 /**
  * 判断该课程是否计入绩点
- * @param {String} name 课程名称
- * @param {String} course 课程号
- * @param {String} score 课程成绩
+ * @param {string} name 课程名称
+ * @param {string} course 课程号
+ * @param {string} score 课程成绩
  * @returns {boolean} true: 不计入该课程成绩; false: 计入
  */
 function isNotCount(name, course, score) {
@@ -193,7 +190,8 @@ function main() {
                     for (let i = 0; i < titles.length; i++) {
                         // console.log(titles[i]);
                         let b = document.createElement('b');
-                        let gpa = (results[i].totalScores / results[i].totalPoints).toFixed(2);
+                        let r = results[i].totalScores / results[i].totalPoints
+                        let gpa = isNaN(r) ? '0.00' : r.toFixed(2);
 
                         b.innerText = '\xa0本学期平均学分绩点: ' + gpa;
                         titles[i].getElementsByTagName('td')[2].appendChild(b);
@@ -252,12 +250,20 @@ function main() {
                     b.innerText = '\xa0平均学分绩点: ' + gpa;
                     title.getElementsByTagName('td')[2].appendChild(b);
 
-                    let p = document.createElement('p');
-                    p.innerText = '总修读学分:\xa0' + results[0].totalPoints
+                    let resultText = '总修读学分:\xa0' + results[0].totalPoints
                                     + '\xa0\xa0已通过学分:\xa0' + results[0].totalNotFailedPoints
                                     + '\xa0\xa0挂科数:\xa0' + results[0].fails
                                     + '\xa0\xa0平均学分绩点: \xa0' + gpa;
-                    mainF.document.querySelectorAll('td')[8].appendChild(p);
+
+                    let bottomHTML = `<table width="100%" align="center" cellpadding="0" cellspacing="0">
+                                    <tbody>
+                                        <tr>
+                                            <td height="21">`+ resultText +`</td>
+                                        </tr>
+                                    </tbody>
+                                </table>`;
+
+                    mainF.document.querySelectorAll('td')[8].innerHTML += bottomHTML;
                 }, 1500);
             }
         }
