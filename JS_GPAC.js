@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.2.14
+// @version      1.3.0
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -66,7 +66,7 @@ function isNotCount(datas, p) {
  * @param {number} sPlace 成绩所在的位置
  * @returns {object} 存有总学分、总成绩、已通过学分、挂科数的对象
  */
-function calSingleGpa(obj, d, sPlace) {
+function calSingleGpa(obj, d, sPlace, imgPlace) {
     for (let o of obj) {
         let datas = o.querySelectorAll('td');
         if (isNotCount(datas, sPlace)) {
@@ -91,6 +91,9 @@ function calSingleGpa(obj, d, sPlace) {
 
         datas[2].innerText += ' ※';
         datas[2].style = "font-weight:bolder";
+
+        var img = datas[imgPlace].firstElementChild;
+        img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
     }
     return d;
 }
@@ -101,7 +104,7 @@ function calSingleGpa(obj, d, sPlace) {
  * @param {number} sPlace 成绩所在的位置
  * @returns {object[]} 返回包含总学分、总成绩、已通过学分、挂科数的对象的数组
  */
-function calGpa(frame, sPlace) {
+function calGpa(frame, sPlace, imgPlace) {
     let data = {
         totalPoints: 0,
         totalScores: 0,
@@ -113,13 +116,13 @@ function calGpa(frame, sPlace) {
 
     for (let s of scores) {
         let even = s.querySelectorAll('.even');
-        data = calSingleGpa(even, data, sPlace);
+        data = calSingleGpa(even, data, sPlace, imgPlace);
 
         let ef = s.querySelectorAll('.evenfocus');
-        data = calSingleGpa(ef, data, sPlace);
+        data = calSingleGpa(ef, data, sPlace, imgPlace);
 
         let odd = s.querySelectorAll('.odd');
-        data = calSingleGpa(odd, data, sPlace);
+        data = calSingleGpa(odd, data, sPlace, imgPlace);
 
         datas.push(data);
 
@@ -161,7 +164,7 @@ function main() {
 
                 // 延时等待框架加载完成
                 setTimeout(function() {
-                    let results = calGpa(scoreF, 6);
+                    let results = calGpa(scoreF, 6, 7);
 
                     /**
                      * 每学期的标题位置
@@ -244,7 +247,7 @@ function main() {
                 mainF.document.body.setAttribute("is-calculated", "true"); // 设置属性避免延时时持续对框架内容进行操作
 
                 setTimeout(function() {
-                    let results = calGpa(mainF, 9);
+                    let results = calGpa(mainF, 9, 12);
 
                     /**
                      * “本学期成绩”标题位置
