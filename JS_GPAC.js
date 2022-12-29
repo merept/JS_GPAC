@@ -45,7 +45,7 @@ function isEffectiveScore(score) {
  * @returns {boolean} true: 该课程缓考; false: 正常状态未缓考
  */
 function isDeferrd(datas) {
-    return datas.length === 13 && new RegExp("^[\s　]*$").test(datas[11].innerText)
+    return datas.length === 13 && !new RegExp("^[\s　]*$").test(datas[11].innerText)
 }
 
 /**
