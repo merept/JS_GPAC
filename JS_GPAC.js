@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.3.2
+// @version      1.3.3
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -31,12 +31,12 @@ function isElectives(course) {
 }
 
 /**
- * 判断成绩是否为空
- * @param {string} score 课程成绩
- * @returns {boolean} true: 课程成绩为空; false: 不为空
+ * 判断字符串是否为空
+ * @param {string} str 输入字符串
+ * @returns {boolean} true: 字符串为空; false: 不为空
  */
-function isEffectiveScore(score) {
-    return !score || new RegExp("^[\s　]*$").test(score);
+function isNullOrEmpty(str) {
+    return !str || new RegExp("^[\s　]*$").test(str);
 }
 
 /**
@@ -45,7 +45,7 @@ function isEffectiveScore(score) {
  * @returns {boolean} true: 该课程缓考; false: 正常状态未缓考
  */
 function isDeferrd(datas) {
-    return datas.length === 13 && !new RegExp("^[\s　]*$").test(datas[11].innerText)
+    return datas.length === 13 && !isNullOrEmpty(datas[11].innerText)
 }
 
 /**
@@ -56,7 +56,7 @@ function isDeferrd(datas) {
  */
 function isNotCount(datas, p) {
     return isEnglishTest(datas[2].innerText) || isElectives(datas[0].innerText) ||
-        isEffectiveScore(datas[p].innerText) || isDeferrd(datas);
+        isNullOrEmpty(datas[p].innerText) || isDeferrd(datas);
 }
 
 /**
@@ -69,6 +69,10 @@ function isNotCount(datas, p) {
 function calSingleGpa(obj, d, sPlace, imgPlace) {
     for (let o of obj) {
         let datas = o.querySelectorAll('td');
+        var img = datas[imgPlace].firstElementChild;
+        if (img != null) {
+            img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
+        }
         if (isNotCount(datas, sPlace)) {
             datas[2].innerText += ' (跳过)';
             continue;
@@ -92,8 +96,8 @@ function calSingleGpa(obj, d, sPlace, imgPlace) {
         datas[2].innerText += ' ※';
         datas[2].style = "font-weight:bolder";
 
-        var img = datas[imgPlace].firstElementChild;
-        img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
+        // var img = datas[imgPlace].firstElementChild;
+        // img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
     }
     return d;
 }
