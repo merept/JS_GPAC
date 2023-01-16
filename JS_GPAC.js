@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.3.3
+// @version      1.4.0
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
@@ -10,7 +10,7 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-var skipElectives = true; //true: 不计算选修课，false: 计算选修课，默认不计算选修课
+const skipElectives = true; //true: 不计算选修课，false: 计算选修课，默认不计算选修课
 
 /**
  * 判断是否为 CET 相关的课程
@@ -27,7 +27,7 @@ function isEnglishTest(name) {
  * @returns {boolean} true: 是选修课; false: 不是或者用户设置不跳过选修课
  */
 function isElectives(course) {
-    return skipElectives && course.substring(0, 2) == '00';
+    return skipElectives && course.substring(0, 2) === '00';
 }
 
 /**
@@ -60,6 +60,20 @@ function isNotCount(datas, p) {
 }
 
 /**
+ * 将挂科的课程标红
+ * @param {HTMLCollection} datas 挂科的课程
+ */
+function turnToRed(datas) {
+    for (let [i, d] of datas.entries()) {
+        if (i === 2) {
+            d.style = "font-weight:bolder;color:red"
+        } else {
+            d.style = "color:red"
+        }
+    }
+}
+
+/**
  * 计算单个学期的平均学分绩点
  * @param {HTMLCollection} obj 该学期的 HTML 集合
  * @param {object} d 存有总学分、总成绩、已通过学分、挂科数的对象
@@ -87,14 +101,15 @@ function calSingleGpa(obj, d, sPlace, imgPlace) {
         let gradePoint = 0;
         if (score >= 60) {
             gradePoint = (score - 60) / 10 + 1;
-            d.totalNotFailedPoints += p
+            d.totalNotFailedPoints += p;
+            datas[2].style = "font-weight:bolder";
         } else {
             d.fails++;
+            turnToRed(datas);
         }
         d.totalScores += gradePoint * p;
 
         datas[2].innerText += ' ※';
-        datas[2].style = "font-weight:bolder";
 
         // var img = datas[imgPlace].firstElementChild;
         // img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
@@ -106,6 +121,7 @@ function calSingleGpa(obj, d, sPlace, imgPlace) {
  * 计算平均学分绩点
  * @param {HTMLIFrameElement} frame 记录了课程信息的网页框架
  * @param {number} sPlace 成绩所在的位置
+ * @param imgPlace
  * @returns {object[]} 返回包含总学分、总成绩、已通过学分、挂科数的对象的数组
  */
 function calGpa(frame, sPlace, imgPlace) {
