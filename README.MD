@@ -1,17 +1,10 @@
-<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
-<script type="text/javascript">
-    $.get("version.txt", function(data) {
-        $(".gpac-js").text(data)
-    })
-</script>
-
 # SWPU绩点计算
 
 ## 简介
 
 本脚本可以在[西南石油大学教务系统](https://jwxt.swpu.edu.cn)的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点
 
-最新版本：v<nobr class="gpac-js">1.0.0</nobr>
+最新版本：v1.4.0
 
 更新内容：
 
@@ -49,7 +42,7 @@
 
 SWPU学分绩点
 
-版本 v<nobr class="gpac-js">1.0.0</nobr>
+版本 v1.4.0
 
 更新内容：
 
