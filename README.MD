@@ -4,11 +4,13 @@
 
 本脚本可以在[西南石油大学教务系统](https://jwxt.swpu.edu.cn)的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点
 
-最新版本：v1.4.0
+最新版本：v1.4.1
 
 更新内容：
 
-> 挂科的成绩将会被标红
+> 增加了对校外访问教务系统网址的匹配
+>
+> 不用 VPN 在校外访问教务系统:  [点击访问](http://jwxt-swpu-edu-cn.webvpn.swpu.edu.cn:8118/loginAction.do)
 
 ## 使用方法
 
@@ -42,11 +44,13 @@
 
 SWPU学分绩点
 
-版本 v1.4.0
+版本 v1.4.1
 
 更新内容：
 
-> 挂科的成绩将会被标红
+> 增加了对校外访问教务系统网址的匹配
+>
+> 不用 VPN 在校外访问教务系统:  [点击访问](http://jwxt-swpu-edu-cn.webvpn.swpu.edu.cn:8118/loginAction.do)
 
 <a class='button is-primary is-light is-responsive' href='https://greasyfork.org/scripts/456105-swpu%E7%BB%A9%E7%82%B9%E8%AE%A1%E7%AE%97/code/SWPU%E7%BB%A9%E7%82%B9%E8%AE%A1%E7%AE%97.user.js'>立即安装</a>
 

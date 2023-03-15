@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         SWPU绩点计算
 // @namespace    http://merept.github.io/
-// @version      1.4.0
+// @version      1.4.1
 // @license      MIT
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
 // @match        http://jwxt.swpu.edu.cn/loginAction.do
+// @match        http://jwxt-swpu-edu-cn.webvpn.swpu.edu.cn:8118/loginAction.do
 // @icon         https://pic.imgdb.cn/item/6388c62816f2c2beb1c0909d.png
 // @grant        unsafeWindow
 // ==/UserScript==
@@ -77,27 +78,27 @@ function turnToRed(datas) {
  * 计算单个学期的平均学分绩点
  * @param {HTMLCollection} obj 该学期的 HTML 集合
  * @param {object} d 存有总学分、总成绩、已通过学分、挂科数的对象
- * @param {number} sPlace 成绩所在的位置
+ * @param {number} scoreIndex 成绩所在的位置
  * @returns {object} 存有总学分、总成绩、已通过学分、挂科数的对象
  */
-function calSingleGpa(obj, d, sPlace, imgPlace) {
+function calSingleGpa(obj, d, scoreIndex, imgIndex) {
     for (let o of obj) {
         let datas = o.querySelectorAll('td');
-        var img = datas[imgPlace].firstElementChild;
+        var img = datas[imgIndex].firstElementChild;
         if (img != null) {
             img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
         }
-        if (isNotCount(datas, sPlace)) {
+        if (isNotCount(datas, scoreIndex)) {
             datas[2].innerText += ' (跳过)';
             continue;
         }
 
-        // console.log(datas[2].innerText + ' - 学分：' + datas[4].innerText + ' - 成绩：' + datas[sPlace].children[0].innerText);
+        // console.log(datas[2].innerText + ' - 学分：' + datas[4].innerText + ' - 成绩：' + datas[scoreIndex].children[0].innerText);
 
         let p = Number(datas[4].innerText);
         d.totalPoints += p
 
-        let score = Number(datas[sPlace].innerText);
+        let score = Number(datas[scoreIndex].innerText);
         let gradePoint = 0;
         if (score >= 60) {
             gradePoint = (score - 60) / 10 + 1;
@@ -111,7 +112,7 @@ function calSingleGpa(obj, d, sPlace, imgPlace) {
 
         datas[2].innerText += ' ※';
 
-        // var img = datas[imgPlace].firstElementChild;
+        // var img = datas[imgIndex].firstElementChild;
         // img.attributes.onclick.value = img.attributes.onclick.value.replace('cjmx', 'window.open');
     }
     return d;
@@ -120,11 +121,11 @@ function calSingleGpa(obj, d, sPlace, imgPlace) {
 /**
  * 计算平均学分绩点
  * @param {HTMLIFrameElement} frame 记录了课程信息的网页框架
- * @param {number} sPlace 成绩所在的位置
- * @param imgPlace
+ * @param {number} scoreIndex 成绩所在的位置
+ * @param imgIndex
  * @returns {object[]} 返回包含总学分、总成绩、已通过学分、挂科数的对象的数组
  */
-function calGpa(frame, sPlace, imgPlace) {
+function calGpa(frame, scoreIndex, imgIndex) {
     let data = {
         totalPoints: 0,
         totalScores: 0,
@@ -136,13 +137,13 @@ function calGpa(frame, sPlace, imgPlace) {
 
     for (let s of scores) {
         let even = s.querySelectorAll('.even');
-        data = calSingleGpa(even, data, sPlace, imgPlace);
+        data = calSingleGpa(even, data, scoreIndex, imgIndex);
 
         let ef = s.querySelectorAll('.evenfocus');
-        data = calSingleGpa(ef, data, sPlace, imgPlace);
+        data = calSingleGpa(ef, data, scoreIndex, imgIndex);
 
         let odd = s.querySelectorAll('.odd');
-        data = calSingleGpa(odd, data, sPlace, imgPlace);
+        data = calSingleGpa(odd, data, scoreIndex, imgIndex);
 
         datas.push(data);
 
