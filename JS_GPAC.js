@@ -6,7 +6,7 @@
 // @description  在jwxt.swpu.edu.cn的“综合查询-全部成绩”以及“本学期成绩”页面显示各个学期的平均学分绩点，加粗并打上“※”号的课程是计算进去的，有“（跳过）”注释的证明是英语四六级、选修课或暂时未出成绩的课程，不计算在内（若要计算选修课，请把源代码最上面的skipElectives变量的值改为false），什么标记都没有的可能是没有计算进去，刷新网页即可。（结果可能有出入，仅供参考）
 // @author       MerePT
 // @match        http://jwxt.swpu.edu.cn/loginAction.do
-// @match        http://jwxt-swpu-edu-cn.webvpn.swpu.edu.cn:8118/loginAction.do
+// @match        http://jwxt-swpu-edu-cn.vpn.swpu.edu.cn:8118/loginAction.do
 // @icon         https://pic.imgdb.cn/item/6388c62816f2c2beb1c0909d.png
 // @grant        unsafeWindow
 // ==/UserScript==

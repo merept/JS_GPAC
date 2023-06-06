@@ -44,13 +44,13 @@
 
 SWPU学分绩点
 
-版本 v1.4.1
+版本 v1.4.2
 
 更新内容：
 
-> 增加了对校外访问教务系统网址的匹配
+> 更新教务系统校外访问地址
 >
-> 不用 VPN 在校外访问教务系统:  [点击访问](http://jwxt-swpu-edu-cn.webvpn.swpu.edu.cn:8118/loginAction.do)
+> 不用 VPN 在校外访问教务系统:  [点击访问](https://merept.github.io/gpac/redirect-jwxt-swpu/)
 
 <a class='button is-primary is-light is-responsive' href='https://greasyfork.org/scripts/456105-swpu%E7%BB%A9%E7%82%B9%E8%AE%A1%E7%AE%97/code/SWPU%E7%BB%A9%E7%82%B9%E8%AE%A1%E7%AE%97.user.js'>立即安装</a>
 
